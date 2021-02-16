@@ -1,5 +1,5 @@
 function attach() {
-	const coordinateElement = document.createElement('div');
+	const coordinateElement = document.createElement('textarea');
 
 	Object.assign(coordinateElement.style, {
 		position: 'absolute',
@@ -8,25 +8,50 @@ function attach() {
 		top: '0px',
 		width: '200px',
 		height: '100px',
-		zIndex: '10000',
+		zIndex: '100',
 		color: '#000000',
 	});
 
 	coordinateElement.classList.add('test-area');
 
 	document.body.appendChild(coordinateElement);
-	_getCursorPosition(coordinateElement);
+	_getCursorPosition();
 
-	function _getCursorPosition(element) {
+	function _getCursorPosition() {
 		const canvas = document.querySelector('canvas');
 
 		canvas.addEventListener('click', (event) => {
 			const rect = canvas.getBoundingClientRect()
 			const x = event.clientX - rect.left
 			const y = event.clientY - rect.top
-
-			element.innerText = `x: ${x} / y: ${y}`;
+			_logMessage('click', `x: ${x} / y: ${y}`);
+			_createClickElement(x, y);
 		});
+	}
+
+	function _logMessage(eventName, value) {
+		coordinateElement.value += `${eventName} - ${value}\n`;
+	}
+
+	function _createClickElement(x, y) {
+		const clickElement = document.createElement('div');
+
+		Object.assign(clickElement.style, {
+			position: 'absolute',
+			background: 'red',
+			left: `${x}px`,
+			top: `${y}px`,
+			width: '20px',
+			height: '20px',
+			zIndex: '1000',
+			borderRadius: '100%'
+		});
+
+		document.body.appendChild(clickElement);
+
+		setTimeout(() => {
+			clickElement.parentNode.removeChild(clickElement);
+		}, 1000);
 	}
 }
 

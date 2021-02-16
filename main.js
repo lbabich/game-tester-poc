@@ -7,7 +7,6 @@ const stepExecutor = require('./core/step-executor');
 const USERNAME = 'iforiumsoftware1';
 const AUTOMATE_KEY = 'y2GHpsVt5Vv2Nqftv8Bs';
 // const browserstackURL = 'https://' + USERNAME + ':' + AUTOMATE_KEY + '@hub-cloud.browserstack.com/wd/hub';
-const browserstackURL = null;
 // const capabilities = {
 // 	os: 'Windows',
 // 	os_version: '10',
@@ -49,18 +48,10 @@ const steps = [
 ];
 
 function _createDriver() {
-	let driver = null;
-
-	if (browserstackURL) {
-		driver = new Builder()
-			.usingServer(browserstackURL)
-			.withCapabilities(capabilities)
-			.build();
-	} else {
-		driver = new Builder()
-			.withCapabilities(capabilities)
-			.build();
-	}
+	const driver = new Builder()
+		// .usingServer(browserstackURL)
+		.withCapabilities(capabilities)
+		.build();
 
 	return driver;
 }
@@ -91,15 +82,14 @@ function _createDriver() {
 		const gameObject = await driver.wait(until.elementLocated(By.id('GameObjectContainer')), 20000);
 		await driver.wait(until.ableToSwitchToFrame(gameObject), 20000, 'Switched to Game Context');
 		await driver.wait(until.elementLocated(By.xpath('/html/body/div[4]/div/div/div[1]/canvas')), 20000, 'Located Game Canvas context');
-		await driver.sleep(2000);
 		await driver.executeScript(debuggerConsole.attach);
-
+		await driver.sleep(2000);
 		await stepExecutor.execute(driver, steps);
 		await driver.sleep(5000);
 
 	} catch (e) {
 		console.log('failed', e)
 	} finally {
-		// await driver.quit();
+		await driver.quit();
 	}
 })();
