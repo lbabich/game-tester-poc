@@ -13,11 +13,11 @@ function attach() {
 	});
 
 	coordinateElement.classList.add('test-area');
-
+	console.log('-----------', document)
 	document.body.appendChild(coordinateElement);
-	_getCursorPosition();
+	_attachClickListener();
 
-	function _getCursorPosition() {
+	function _attachClickListener() {
 		const canvas = document.querySelector('canvas');
 
 		canvas.addEventListener('click', (event) => {
