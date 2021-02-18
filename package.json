@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "SET NODE_ENV=development && node ./main.js",
+    "prod": "SET NODE_ENV=production && node ./main.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.21.1",
     "selenium-webdriver": "^4.0.0-beta.1"
   }
 }

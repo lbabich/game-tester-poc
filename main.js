@@ -1,12 +1,15 @@
 const { Builder, By, until } = require('selenium-webdriver');
+const axios = require('axios');
 
 const debuggerConsole = require('./core/debugger-console');
 const eventListener = require('./core/event-listener');
 const stepExecutor = require('./core/step-executor');
 
+const baseUrl = process.env.NODE_ENV.trim() === 'development' ? 'https://localhost-gameflex-express.iforium.com/gamelaunch/api/v2.0' : 'https://gameflex-s000.iforium.comm/gamelaunch/api/v2.0';
+const configUrl = `${baseUrl}/config/platforms/s009/operators/ifo/integration-provider/configs`;
 const USERNAME = 'iforiumsoftware1';
 const AUTOMATE_KEY = 'y2GHpsVt5Vv2Nqftv8Bs';
-const browserstackURL = 'https://' + USERNAME + ':' + AUTOMATE_KEY + '@hub-cloud.browserstack.com/wd/hub';
+// const browserstackURL = 'https://' + USERNAME + ':' + AUTOMATE_KEY + '@hub-cloud.browserstack.com/wd/hub';
 // const capabilities = {
 // 	os: 'Windows',
 // 	os_version: '10',
@@ -16,66 +19,8 @@ const browserstackURL = 'https://' + USERNAME + ':' + AUTOMATE_KEY + '@hub-cloud
 // }
 
 const capabilities = {
-	browserName: 'firefox',
-	firefoxOptions: {
-		mobileEmulation: {
-			deviceName: 'Google Nexus 5'
-		}
-	}
+	browserName: 'firefox'
 };
-
-const tests = [
-	{
-		url: 'https://gameflex-s000.iforium.com/gamelaunch/api/v2.0/game-launchers/gul/v1/launch/launch/?casinoid=S009-IFO-20&gameid=723&languagecode=en&playmode=demo&channelid=desktop&devicechannel=web&lobbyurl=https%3A%2F%2Fb2c-qa.high5casino.com%2Fcasino%2Flobby&currencycode=EUR&regulationsenabled=false&operatororigin=*',
-		steps: [
-			{
-				key: 'move',
-				coordinates: { x: 623, y: 624 }
-			},
-			{
-				key: 'press',
-			},
-			{
-				key: 'release',
-			},
-			{
-				key: 'pause',
-				time: 1000
-			},
-			{
-				key: 'press',
-			},
-			{
-				key: 'release',
-			}
-		]
-	},
-	{
-		url: 'https://gameflex-s000.iforium.com/gamelaunch/api/v2.0/game-launchers/gul/v1/launch/launch/?casinoid=S009-IFO-20&gameid=19057&languagecode=en&playmode=demo&channelid=desktop&devicechannel=web&lobbyurl=https%3A%2F%2Fb2c-qa.high5casino.com%2Fcasino%2Flobby&currencycode=EUR&regulationsenabled=false&operatororigin=*',
-		steps: [
-			{
-				key: 'move',
-				coordinates: { x: 623, y: 624 }
-			},
-			{
-				key: 'press',
-			},
-			{
-				key: 'release',
-			},
-			{
-				key: 'pause',
-				time: 1000
-			},
-			{
-				key: 'press',
-			},
-			{
-				key: 'release',
-			}
-		]
-	}
-];
 
 function _createDriver() {
 	const driver = new Builder()
@@ -86,8 +31,9 @@ function _createDriver() {
 	return driver;
 }
 
-async function _executeTestSuite(driver, test) {
-	await driver.get(test.url);
+async function _executeTestSuite(driver, config, testConfig) {
+	const url = `https://gameflex-s000.iforium.com/gamelaunch/api/v2.0/game-launchers/gul/v1/launch/launch/?casinoid=S009-IFO-20&gameid=${testConfig.gameID}&languagecode=en&playmode=demo&channelid=${testConfig.channelID}&devicechannel=web&lobbyurl=https%3A%2F%2Fb2c-qa.high5casino.com%2Fcasino%2Flobby&currencycode=EUR&regulationsenabled=false`;
+	await driver.get(url);
 
 	await driver.executeScript(eventListener.attach);
 
@@ -99,7 +45,6 @@ async function _executeTestSuite(driver, test) {
 		}
 	}, 20000);
 
-
 	const container = await driver.wait(until.elementLocated(By.id('GameflexWidget-1')), 20000);
 	await driver.wait(until.ableToSwitchToFrame(container), 20000, 'Switched to container context');
 
@@ -108,16 +53,34 @@ async function _executeTestSuite(driver, test) {
 	await driver.wait(until.elementLocated(By.css('canvas')), 20000, 'Located Game Canvas context');
 	await driver.executeScript(debuggerConsole.attach);
 	await driver.sleep(2000);
-	await stepExecutor.execute(driver, test.steps);
+	await stepExecutor.execute(driver, testConfig.steps);
 	await driver.sleep(5000);
 }
 
+function _extractConfigsWithTests(configs) {
+	return configs.filter((config) => {
+		return config.testConfigs;
+	})
+}
+
 (async function testRunner() {
+	const configResponse = await axios({
+		method: 'GET',
+		url: configUrl
+	}).catch((e) => {
+		console.error(e);
+	})
+	const defaultConfigs = configResponse.data.result.configs;
+	const configs = _extractConfigsWithTests(defaultConfigs);
 	const driver = _createDriver();
 
 	try {
-		for (const test of tests) {
-			await _executeTestSuite(driver, test);
+		for (const config of configs) {
+			const testConfigs = config.testConfigs;
+
+			for (const testConfig of testConfigs) {
+				await _executeTestSuite(driver, config, testConfig);
+			}
 		}
 	} catch (e) {
 		console.error(e);
